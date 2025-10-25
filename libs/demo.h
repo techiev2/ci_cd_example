@@ -1,4 +1,4 @@
 #pragma once
 void demo_start() {
-  printf("{\"message\": \"Demo started..\"}");
+  printf("{\"message\": \"Demo started again.\"}");
 }
