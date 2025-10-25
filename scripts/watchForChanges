@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+SCRIPTS_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
+APP_DIR=$(dirname $SCRIPTS_DIR)
+fswatch $APP_DIR/*.c $APP_DIR/libs/* $APP_DIR/Makefile $SCRIPTS_DIR/* -o | while read; do clear; make run; done
