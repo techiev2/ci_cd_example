@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+SCRIPTS_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
+APP_DIR=$(dirname $SCRIPTS_DIR)
+logInfo() { [ -z "$1" ] && { printf "[\e[31mERROR\e[0m] No log message provided.\n"; exit 1; } || printf "[\e[33m$(date +'%H:%M:%S')\e[0m] ${1}.\n"; }
+run() { clear && logInfo "Listening.." && make run; }
+
