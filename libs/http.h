@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <sys/time.h>
+#include <stdint.h>
 
 int64_t get_current_time_ms() {
   struct timeval tv;
