@@ -13,6 +13,6 @@ void process_urls(int argc, char **argv) {
   unsigned int i = 1;
   for (; i < argc; i++) {
     int64_t timestamp = get_current_time_ms();
-    printf("{\"message\": \"Procesing %s\", \"timestamp\": %lld}\n", argv[i], timestamp);
+    printf("{\"message\": \"Procesing %s\", \"timestamp\": %lld}\n", argv[i], (long long)timestamp);
   }
 }
