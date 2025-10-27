@@ -1,5 +1,8 @@
 cc=clang
 
+.PHONY= default
+default: build;
+
 dirs:
 	@mkdir -p dist
 
