@@ -27,6 +27,6 @@ void process_urls(int argc, char **argv) {
 void * process_url(void* arg) {
   char* url = arg;
   int64_t timestamp = get_current_time_ms();
-  printf("{\"message\": \"Procesing %s\", \"timestamp\": %lld}\n", url, (long long)timestamp);
+  printf("{\"message\": \"Processing %s\", \"timestamp\": %lld}\n", url, (long long)timestamp);
   return NULL;
 }
