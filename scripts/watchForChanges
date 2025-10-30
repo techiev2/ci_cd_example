@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 source "$(dirname ${BASH_SOURCE[0]})/utils"
 currFile=$(realpath ${BASH_SOURCE})
-[ -z $1 ] && watches=$currFile || watches="$@ $currFile"
-((run || true) && logInfo "No paths provided for watch. Listening to changes only on ${BASH_SOURCE[0]}") && fswatch -o $watches | while read; do run; done
+watches="${pArgs[w]}"
+[[ -z $watches ]] && noWatches=1 || noWatches=0
+[[ -z $watches ]] && watches="$currFile" || watches="${watches} ${currFile}"
+runner="${pArgs[r]}"
+[[ -z $runner ]] && logInfo "No runner specified. Exiting." && exit 1
+logWatcher() {
+  [ $noWatches -eq 1 ] && logInfo "No paths provided for watch. Listening to changes only on ${BASH_SOURCE[0]}" || logInfo "Watching $watches for changes."
+}
+(($runner || true) && logWatcher) && fswatch -o $watches | while read; do ($runner || true) && logWatcher; done
