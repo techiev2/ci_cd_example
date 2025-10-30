@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 source "$(dirname ${BASH_SOURCE[0]})/utils"
-(run || true) && fswatch $APP_DIR/*.c $APP_DIR/libs/* $APP_DIR/Makefile $SCRIPTS_DIR/watchForChanges -o | while read; do run; done
+currFile=$(realpath ${BASH_SOURCE})
+[ -z $1 ] && watches=$currFile || watches="$@ $currFile"
+((run || true) && logInfo "No paths provided for watch. Listening to changes only on ${BASH_SOURCE[0]}") && fswatch -o $watches | while read; do run; done
