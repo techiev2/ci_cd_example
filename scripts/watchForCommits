@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 source "$(dirname ${BASH_SOURCE[0]})/utils"
 currFile=$(realpath ${BASH_SOURCE})
-fswatch -o .git/logs/refs/heads/* | while read; do
+logInfo "Watching for local commits."
+fswatch -o .git/logs/refs/heads/* ${currFile} | while read; do
     CURRENT_BRANCH=$(git branch --show-current)
     if [ -n "$CURRENT_BRANCH" ]; then
-        # Check if we're ahead of remote
         AHEAD=$(git rev-list --count "origin/$CURRENT_BRANCH..HEAD" 2>/dev/null)
         if [ "$AHEAD" -gt 0 ]; then
-            echo "Pushing $AHEAD commit(s) to origin/$CURRENT_BRANCH"
+            logInfo "Pushing $AHEAD commit(s) to origin/$CURRENT_BRANCH"
             git push origin "$CURRENT_BRANCH"
         fi
     fi
