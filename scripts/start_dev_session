@@ -1,28 +1,22 @@
 #!/usr/bin/env bash
 # ~/start-beetle-beetle-${SESS_NAME}.sh
-
 source "$(dirname ${BASH_SOURCE[0]})/utils"
 cd $APP_DIR
 APP_NAME="${APP_DIR##*/}"
-
 SESS_NAME="${APP_NAME}-dev"
-
 tmux kill-session -t $SESS_NAME 2>/dev/null
-
+SESSION_DIR_FILE=".dev_sessions"
 # Calculate precise dimensions
 TERM_WIDTH=$(tput cols)
 TERM_HEIGHT=$(tput lines)
-
 NVIM_WIDTH=$((TERM_WIDTH * 80 / 100))
-PANES_HEIGHT=$((TERM_HEIGHT - 1))  # Account for status line
+PANES_HEIGHT=$((TERM_HEIGHT - 1))
 PANE_HEIGHT=$((PANES_HEIGHT / 4))
-
 # Get project context
 GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "no-git")
 GIT_COMMITS=$(git log --oneline 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 FILE_COUNT=$(find . -maxdepth 1 -name "*.c" -o -name "*.h" -o -name "*.py" -o -name "*.js" -o -name "*.rs" -o -name "*.go" 2>/dev/null | wc -l | tr -d ' ')
 DIR_SIZE=$(du -sh . 2>/dev/null | cut -f1 || echo "unknown")
-
 # Detect build system
 if [[ -f "package.json" ]]; then
     BUILD_SYSTEM="Node.js"
@@ -40,53 +34,53 @@ else
     BUILD_SYSTEM="Unknown"
     BUILD_CMD="echo 'No build system'"
 fi
-
-# Create session
-tmux new-session -d -s ${SESS_NAME} -c "$PWD" "zsh"
+# Create a cleanup script that will run when the session ends
+CLEANUP_SCRIPT="/tmp/tmux-cleanup-${SESS_NAME}.sh"
+cat > "$CLEANUP_SCRIPT" << EOF
+#!/usr/bin/env bash
+echo ":::\$(date +'%Y-%m-%d_%H:%M:%S')" >> "$APP_DIR/.dev_sessions"
+rm -f "$CLEANUP_SCRIPT"
+EOF
+chmod +x "$CLEANUP_SCRIPT"
+# Create session with cleanup trap
+tmux new-session -d -s ${SESS_NAME} -c "$PWD" "trap '$CLEANUP_SCRIPT' EXIT; zsh"
+tmux set-option -t "$SESS_NAME" @app_dir "$APP_DIR"
 tmux send-keys -t ${SESS_NAME} "nvim -p *.c libs/* scripts/*" C-m
-
 # Vertical split
 tmux split-window -h -t ${SESS_NAME} "zsh"
-
 # Set 80/20 width using precise calculation
 tmux resize-pane -t ${SESS_NAME}:0.0 -x $NVIM_WIDTH
-
 # Split right pane into four equal horizontal panes
 tmux split-window -v -t ${SESS_NAME}:0.1 "zsh"
 tmux split-window -v -t ${SESS_NAME}:0.2 "zsh"
 tmux split-window -v -t ${SESS_NAME}:0.3 "zsh"
-
 # Set equal heights (approximately 25% each)
 for i in 1 2 3 4; do
     tmux resize-pane -t ${SESS_NAME}:0.$i -y $PANE_HEIGHT
 done
-
 # Pane 1: File watcher with clean context
 tmux send-keys -t ${SESS_NAME}:0.1 "printf '📁 Project: %s files, %s\\n' '$FILE_COUNT' '$DIR_SIZE'" C-m
-tmux send-keys -t ${SESS_NAME}:0.1 "./scripts/watchLocalFiles -w *.c libs/* scripts/* -r make run" C-m
-
+tmux send-keys -t ${SESS_NAME}:0.1 "./scripts/watchLocalFiles" C-m
 # Pane 2: Git watcher with clean context
 tmux send-keys -t ${SESS_NAME}:0.2 "printf '📊 Git: %s branch, %s commits\\n' '$GIT_BRANCH' '$GIT_COMMITS'" C-m
 tmux send-keys -t ${SESS_NAME}:0.2 "./scripts/watchForCommits" C-m
-
 # Pane 3: Smart scratch with build info
 tmux send-keys -t ${SESS_NAME}:0.3 "clear && printf '🚀 %s Project\\n' '$BUILD_SYSTEM'" C-m
 tmux send-keys -t ${SESS_NAME}:0.3 "printf '➤ Build: %s\\n' '$BUILD_CMD'" C-m
 tmux send-keys -t ${SESS_NAME}:0.3 "printf '📝 Ready for commands:\\n'" C-m
 tmux send-keys -t ${SESS_NAME}:0.3 "git status" C-m
-
 # Pane 4: Debug area with quick commands
 tmux send-keys -t ${SESS_NAME}:0.4 "clear && cat << 'EOF'
 
 🐛 DEBUG & TOOLS
 Quick commands:
-• make test    # Run tests
-• make debug   # Debug build  
-• make clean   # Clean build
+- make test    # Run tests
+- make debug   # Debug build 
+- make clean   # Clean build
 
 EOF
 " C-m
-
+echo -n "$(date +'%Y-%m-%d_%H:%M:%S')" >> .dev_sessions
 # Focus on nvim pane and attach
 tmux select-pane -t ${SESS_NAME}:0.0
 tmux attach-session -t ${SESS_NAME}
